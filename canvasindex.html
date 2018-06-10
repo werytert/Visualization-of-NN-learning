@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Визуализация обучения нейронной сети</title>
+	<link href="style.css" rel="stylesheet">
+</head>
+<body>
+<script src="main3.js"></script>
+<p id = "header">Визуализация обучения нейронной сети методом обратного распространения ошибки</p>
+<div id = "canvas"><canvas id = 'mainlist'></canvas></div>
+<script type="text/javascript">
+	function drawEllipse(ctx, x, y, a, b) {
+		ctx.save();
+		ctx.beginPath();
+		ctx.translate(x, y);
+		ctx.scale(a / b, 1);
+		ctx.arc(0, 0, b, 0, Math.PI * 2, true);
+		ctx.restore();
+		ctx.strokeStyle = "#000";
+		ctx.closePath();
+		ctx.stroke();
+	}
+	//60pxx30px
+	function drawStructure(NN1)
+	{
+		var aEll = 30;
+		var bEll = 20;
+		var LenWeight = 30;
+		var MarginRound = 20;
+		var CntLineWeight = NN1.structure.length - 1;
+		var MaxCntOfWeights = Math.max.apply(null, NN1.structure);
+		var canvasWidth = NN1.structure.length*aEll*2 + (CntLineWeight+0.5)*MaxCntOfWeights*LenWeight;
+		var canvasHeight = Math.max.apply(null, NN1.structure)*(bEll*2 + MarginRound);
+		var TextWeightSize = 10;
+		var TextValueSize = 10;
+
+		document.getElementById('mainlist').height = canvasHeight;
+		document.getElementById('mainlist').width = canvasWidth;
+		document.getElementById('mainlist').style = 'width:' + canvasWidth + 'px; height: ' + canvasHeight + 'px;';
+		var draw = document.getElementById("mainlist");
+		if (draw.getContext){
+			var ctx = draw.getContext('2d');
+			ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+			ctx.beginPath();
+			var x = aEll;
+
+			for (var i  = 0; i < NN1.layers.length; i++)
+			{
+				
+				
+				var y = (canvasHeight - NN1.structure[i]*(bEll*2 + MarginRound))/2 - bEll ;
+
+				for (var j = 0; j < NN1.layers[i].neurons.length; j++)
+				{
+					
+					y += bEll*2 + MarginRound;
+	       			drawEllipse(ctx, x,y,aEll, bEll);
+	       			ctx.fillStyle = "#000";
+				    ctx.font = "bold 15px Arial";
+				    ctx.fillText(NN1.layers[i].neurons[j].value.toFixed(3), x-18, y+5);
+				   
+	       			if (i > 0){
+		       			for (var k = 0; k < CountLines; k++)
+		       			{
+		       				ctx.beginPath();
+		       				ctx.moveTo(Linex1, Liney1 + k*(bEll*2+MarginRound));
+		       				var Linex2 = x - aEll;
+		       				var Liney2 = y;
+		       				ctx.lineTo(Linex2, Liney2);
+		       				ctx.strokeStyle = "#ddd";
+		       				ctx.closePath();
+		       				ctx.stroke();
+		       				
+		       			}
+		       		}
+				}
+
+				var Linex1 = x+aEll;
+				var CountLines = NN1.structure[i];
+				var Liney1 = y-((bEll)*2+MarginRound)*(CountLines-1);
+				x += aEll*2+MaxCntOfWeights*LenWeight;
+
+			}
+			var x = aEll;
+			for (var i  = 0; i < NN1.layers.length; i++)
+				{
+					var y = (canvasHeight - NN1.structure[i]*(bEll*2 + MarginRound))/2 - bEll ;
+					for (var j = 0; j < NN1.layers[i].neurons.length; j++)
+					{
+						y += bEll*2 + MarginRound;
+						var StrWeight = '[';
+						for (var n1 = 1; n1 < NN1.layers[i].neurons[j].connects.length; n1 += 2)
+					    {
+					    	ctx.fillStyle = "#000";
+					    	ctx.font = "bold 12px Arial";
+					    	StrWeight += (NN1.layers[i].neurons[j].connects[n1].toFixed(2));
+					    	if (n1 < NN1.layers[i].neurons[j].connects.length-1)
+					    	{
+					    		StrWeight += ', ';
+					    	}
+					    	
+					    }
+					    StrWeight += ']';
+					    if (i > 0){
+					    	ctx.fillText(StrWeight, x - ctx.measureText(StrWeight).width/2, y-bEll-5);
+					    }
+					}
+					x += aEll*2+MaxCntOfWeights*LenWeight;
+				}
+		}
+	}
+var NN1 = 'No';
+function drawNo()
+{
+	
+
+	
+	var draw = document.getElementById("mainlist");
+	if (draw.getContext){
+		var ctx = draw.getContext('2d');
+		ctx.beginPath()
+		ctx.fillStyle = "#000";
+		ctx.font = "bold 20px Arial";
+		var strBegin = 'Создайте нейронную сеть, нажмите "Новая" и следуйте инструкциям';
+		var canvasWidth = ctx.measureText(strBegin).width;
+		document.getElementById('mainlist').width = canvasWidth;
+		ctx.font = "bold 18px Arial";
+		ctx.fillText(strBegin,  (canvasWidth - ctx.measureText(strBegin).width)/2, 20);//ctx.measureText(strBegin).height*2);
+		ctx.closePath()
+	}
+}
+drawNo();
+function isNumeric(n) 
+{
+		return !isNaN(parseFloat(n)) && isFinite(n);
+}
+function NextStep(inputArr, outputArr)
+{
+	TrainStep = 0;
+	if (NN1 !== 'No'){
+		count = document.getElementById("StepCount").value;
+		if (!(isNumeric(count)))
+		{
+			alert('Неверно введен шаг итерации');
+		}
+		else
+		{
+			for (var cnt = 0; cnt < count; cnt++)
+			{
+				for (var i = 0; i < inputArr.length; i++){
+					NN1.TrainOne(inputArr[i], outputArr[i]);
+				}
+				NN1.step++;
+			}
+		}
+		
+		document.getElementById("CurrIt").innerHTML = "Текущая итерация: " + NN1.step; //В class NN надо добавить это
+		NN1.ResultOne(inputArr[inputArr.length-1]);
+		drawStructure(NN1);
+	} else{
+		alert ('Нет нейронной сети');
+	}
+}
+var TrainStep = 0;
+function NextTrainStep(inputArr, outputArr)
+{
+	if (NN1 !== 'No'){
+		NN1.TrainOne(inputArr[TrainStep], outputArr[TrainStep]);
+		NN1.ResultOne(inputArr[TrainStep]);
+		TrainStep++;
+		if (TrainStep >= inputArr.length)
+		{
+			TrainStep = 0;
+			NN1.step++;
+			document.getElementById("CurrIt").innerHTML = "Текущая итерация: " + NN1.step;
+		}
+		drawStructure(NN1);
+	} else {
+		alert ('Нет нейронной сети');
+	}
+}
+function NewNN()
+{
+	 document.getElementById('NewNNpopup').style.display = 	'block';
+}
+
+function NewNNClose()
+{
+	 document.getElementById('NewNNpopup').style.display = 	'none';
+}
+var countOfData = 1;
+var inputArr = [];
+var outputArr = [];
+function StrArrToNum(arr)
+{
+	for (var i = 0; i < arr.length; i++)
+	{
+		if (isNumeric(arr[i]))
+		{
+		arr[i] = Number(arr[i]);
+		} else{
+			return 'Error';
+		}
+
+	}
+	return arr;
+}
+function NewNNCreate()
+{
+	var ErrorF = false;
+	inputArr = [];
+	outputArr = [];
+	var structure = document.getElementById('NewNNStructure').value;
+	structure = structure.split(' ');
+	structure = StrArrToNum(structure);
+	if ((structure === 'Error') && (!ErrorF))
+	{
+		alert("Неверный формат для структуры нейронной сети");
+		ErrorF = true;
+	}
+	NN1 = new NeuralNetwork(structure);
+	for (var i = 1; i < countOfData+1; i++)
+	{
+		var input = document.getElementById('input'+i).value;
+		var output = document.getElementById('output'+i).value;
+		input = input.split(' ');
+		output = output.split(' ');
+		input = StrArrToNum(input);
+		output = StrArrToNum(output);
+		if (((input === 'Error') || (output === 'Error') || (input.length !== structure[0]) || (output.length !== structure[structure.length-1])) && (!ErrorF))
+		{
+			alert('Неверные входные данные для элемента выборки ' + (Math.ceil(i)));
+			ErrorF = true;
+		}else
+		{
+			inputArr.push(input);
+			outputArr.push(output);
+		}
+
+	}
+	if (!ErrorF)
+	{
+		NN1.ResultOne(inputArr[0])
+		drawStructure(NN1);
+		NewNNClose();
+	}
+
+}
+
+function plusOne()
+{
+	countOfData++;
+	var newLabel = document.createElement('span');
+	newLabel.id = 'label'+countOfData;
+	var newInput = document.createElement('input');
+	newInput.type = "text";
+	newInput.name = "NewNNData";
+	newInput.id = "input" + countOfData;
+	newInput.className = "dataNewIn";
+	var newOutput = document.createElement('input');
+	newOutput.type = "text";
+	newOutput.name = "NewNNData";
+	newOutput.id = "output" + countOfData;
+	newOutput.className = "dataNewOut";
+	var parent = document.getElementById('output' + (countOfData-1));
+	parent.parentNode.insertBefore(newOutput, parent.nextSibling);
+	parent.parentNode.insertBefore(newInput, parent.nextSibling);
+	parent.parentNode.insertBefore(newLabel, parent.nextSibling);
+
+	newLabel.innerHTML = countOfData + ': ';
+}
+function minusOne()
+{
+	
+	var input = document.getElementById("input" + countOfData);
+	input.parentNode.removeChild(input);
+	var output = document.getElementById("output" + countOfData);
+	output.parentNode.removeChild(output);
+	var label = document.getElementById("label" + countOfData);
+	label.parentNode.removeChild(label);
+	countOfData--;
+
+}
+
+function maxErrorF()
+{
+	var maxError = 0;
+
+	for (var i = 0; i < inputArr.length; i++){
+		NN1.ResultOne(inputArr[i]);
+		for (var j = 0; j < NN1.layers[NN1.layers.length-1].neurons.length; j++)
+		{
+			
+			if (maxError < Math.abs(outputArr[i][j] - NN1.layers[NN1.layers.length-1].neurons[j].value))
+			{
+				maxError = Math.abs(outputArr[i][j] - NN1.layers[NN1.layers.length-1].neurons[j].value);
+			}
+		}
+	}
+	return maxError;
+
+}
+
+function TrainUntil()
+{
+	if (NN1 === 'No')
+	{
+		alert('Нет нейронной сети');
+	}
+	else
+	{
+		var RUShure = confirm('Вы хотите обучить нейронную сеть до схождения? Это может занять очень длительное время.');
+		if (RUShure){
+			var butt = document.getElementById('TrainUntilBut');
+			var ErrorCan = document.getElementById('ErrorCan').value;
+			while (ErrorCan <= maxErrorF())
+			{
+				//console.log(maxErrorF());
+				for (var i = 0; i < inputArr.length; i++)
+				{
+					NN1.TrainOne(inputArr[i], outputArr[i]);
+					NN1.step++;
+					if (NN1.step%100 === 0)
+					{
+						document.getElementById("CurrIt").innerHTML = "Текущая итерация: " + NN1.step;
+					}
+				}
+			}
+			drawStructure(NN1);
+			document.getElementById("CurrIt").innerHTML = "Текущая итерация: " + NN1.step;
+		}
+	}
+}
+
+function ResultFor()
+{
+	if (NN1 !== 'No'){
+		var input = document.getElementById('ResultFor').value;
+		input = input.split(' ');
+		input = StrArrToNum(input);
+		if (input === 'Error' )
+		{
+			alert ('Неверный формат входных данных');
+		}
+		else if (input.length !== NN1.structure[0])
+		{
+			alert('Неверная размерность входных данных');
+		} else 
+		{
+			NN1.ResultOne(input);
+			drawStructure(NN1)
+		}
+	}else {
+		alert ('Нет нейронной сети');
+	}
+}
+</script>
+<div class = "ControlPanel">
+	<div class = "InfoPanel">
+		<div class = "infoDiv">
+		<span class = "InfoLabel" id = "CurrIt">Текущая итерация: 0</span>
+		</div>
+		<div class = "infoDiv">
+		<span class = "InfoLabel">Шаг: </span><input type="text" name="Step" id = "StepCount" value = "1">
+		</div>
+		<div class = "infoDiv">
+		<span class = "InfoLabel">Допустимая ошибка: </span><input type="text" name="Step" id = "ErrorCan" value = "0.1">
+		</div>
+		<div class = "infoDiv">
+		<span class = "InfoLabel">Результат для: </span><input type="text" name="Step" id = "ResultFor" value = "">
+		<input class = "ControlButton ResultFor" type="button" value="Показать" name="ResultFor" OnClick="ResultFor()">
+		</div>
+	</div>
+	<div class = "ControlButtons">
+		<input id = "TrainUntilBut" class = "ControlButton" type="button" value="Тренировать до сходения" name="NextStepButton" OnClick="TrainUntil()">
+		<input class = "ControlButton" type="button" value="Новая" name="NextStepButton" OnClick="NewNN()">
+		<br>
+		<input class = "ControlButton" type="button" value="Следующая итерация >" name="NextStepButton" OnClick="NextStep(inputArr, outputArr);">
+		<input class = "ControlButton" type="button" value="Следующее значение выборки >" name="NextStepButton" OnClick="NextTrainStep(inputArr, outputArr);">
+	</div>
+	
+</div>
+<div id = "NewNNpopup">
+	<p class = "popupHeader">Новая нейронная сеть</p>
+	<p>Напишите количество нейронов на каждом слое через пробел, например "2 3 5 1"</p>
+	<input type="text" name="NewNNData" id = "NewNNStructure">
+	<br>
+	
+	<p class = "popupHeader">Входные и выходные данные</p>
+	<div id = "newData">
+		<span id = 'label1'>1: </span><input type="text" name="NewNNData" id = "input1" class = 'dataNewIn'><input type="text" name="NewNNData" id = "output1" class = 'dataNewOut'>
+	</div>
+	<input class = "ControlButton plusButton" type="button" value = "+" name="" OnClick="plusOne()">
+	<input class = "ControlButton plusButton" type="button" value = "-" name="" OnClick="minusOne()">
+	<br>
+	<div class = "okCan">
+		<input class = "ControlButton" type="button" value = "Cancel" name="" OnClick="NewNNClose()">
+		<input class = "ControlButton" type="button" value = "Ok" name="" OnClick="NewNNCreate()">
+	</div>
+</div>
+</body>
+</html>
