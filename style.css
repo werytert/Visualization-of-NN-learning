@@ -16,6 +16,16 @@ canvas
 
 /*EndNew*/
 
+.info
+{
+	position:fixed;	
+	top:1%;
+	right:1%;
+	border:1px solid black;
+	padding:2px 5px 2px 5px;
+}
+
+
 #header
 {
 	text-align: center;
