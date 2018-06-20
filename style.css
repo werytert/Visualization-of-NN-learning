@@ -9,9 +9,9 @@ body
 
 /*New*/
 
-canvas
+#canvas
 {
-
+	margin-bottom: 200px;
 }
 
 /*EndNew*/
